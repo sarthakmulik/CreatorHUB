@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Scissors, Youtube, Loader2, CalendarPlus, CheckCircle2, XCircle } from "lucide-react";
+import { Scissors, Video, Loader2, CalendarPlus, CheckCircle2, XCircle } from "lucide-react";
 import Link from "next/link";
 
 export default function RepurposeDashboard() {
@@ -72,7 +72,7 @@ export default function RepurposeDashboard() {
         <h2 className="text-xl font-bold text-white mb-4">Create New Short</h2>
         <form onSubmit={handleSubmit} className="flex gap-4">
           <div className="relative flex-1">
-            <Youtube size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+            <Video size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
             <input 
               type="url"
               required
