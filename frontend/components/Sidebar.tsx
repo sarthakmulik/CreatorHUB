@@ -12,6 +12,9 @@ import {
   TrendingUp,
   LogOut,
   CreditCard,
+  Briefcase,
+  MessageSquareHeart,
+  Scissors,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -19,6 +22,9 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/calendar",  label: "Calendar",  icon: CalendarDays },
   { href: "/insights",  label: "Insights",  icon: Sparkles },
+  { href: "/media-kit", label: "Media Kit", icon: Briefcase },
+  { href: "/crm",       label: "CRM",       icon: MessageSquareHeart },
+  { href: "/repurpose", label: "Repurpose", icon: Scissors },
   { href: "/pricing",   label: "Upgrade",   icon: CreditCard },
   { href: "/settings",  label: "Settings",  icon: Settings },
 ];

@@ -6,6 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.routers import youtube_router, dashboard_router, instagram_router, tiktok_router, calendar_router, insights_router
 from app.routers.payments import router as payments_router
+from app.routers.mediakit import router as mediakit_router
+from app.routers.crm import router as crm_router
+from app.routers.repurpose import router as repurpose_router
 
 settings = get_settings()
 
@@ -51,6 +54,9 @@ app.include_router(tiktok_router)
 app.include_router(calendar_router)
 app.include_router(insights_router, prefix="/api/insights", tags=["Insights"])
 app.include_router(payments_router)
+app.include_router(mediakit_router)
+app.include_router(crm_router)
+app.include_router(repurpose_router)
 
 
 @app.get("/health")

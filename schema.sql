@@ -91,3 +91,34 @@ CREATE TABLE ai_insights (
     supporting_metric_refs TEXT
 );
 CREATE INDEX ix_ai_insights_user_id ON ai_insights(user_id);
+
+-- 9. Repurposed Videos Table
+CREATE TYPE repurposedvideostatus AS ENUM ('processing', 'completed', 'failed');
+
+CREATE TABLE repurposed_videos (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    original_video_url TEXT NOT NULL,
+    clipped_video_url TEXT,
+    status repurposedvideostatus NOT NULL DEFAULT 'processing',
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() AT TIME ZONE 'utc')
+);
+CREATE INDEX ix_repurposed_videos_user_id ON repurposed_videos(user_id);
+
+-- 10. Comments Table
+CREATE TYPE commentcategory AS ENUM ('question', 'collab', 'positive', 'negative', 'other');
+
+CREATE TABLE comments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    author_name VARCHAR(200),
+    author_profile_url TEXT,
+    text TEXT NOT NULL,
+    sentiment_score FLOAT,
+    category commentcategory NOT NULL DEFAULT 'other',
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() AT TIME ZONE 'utc')
+);
+CREATE INDEX ix_comments_post_id ON comments(post_id);
+
+-- Add niche_cpm to users table
+ALTER TABLE users ADD COLUMN niche_cpm FLOAT NOT NULL DEFAULT 10.0;

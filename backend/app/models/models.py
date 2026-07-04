@@ -49,6 +49,7 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     subscription_tier = Column(SAEnum(SubscriptionTier), default=SubscriptionTier.free, nullable=False)
+    niche_cpm = Column(Float, default=10.0, nullable=False)
     razorpay_customer_id = Column(String(200), nullable=True)
     razorpay_subscription_id = Column(String(200), nullable=True)
 
@@ -158,3 +159,50 @@ class AIInsight(Base):
     supporting_metric_refs = Column(Text, nullable=True)  # JSON string of referenced metric IDs
 
     user = relationship("User", back_populates="ai_insights")
+
+
+class RepurposedVideoStatus(str, enum.Enum):
+    processing = "processing"
+    completed = "completed"
+    failed = "failed"
+
+class RepurposedVideo(Base):
+    """
+    Tracks AI repurposed vertical videos from long-form content.
+    """
+    __tablename__ = "repurposed_videos"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    original_video_url = Column(Text, nullable=False)
+    clipped_video_url = Column(Text, nullable=True)
+    status = Column(SAEnum(RepurposedVideoStatus), default=RepurposedVideoStatus.processing, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", backref="repurposed_videos")
+
+
+class CommentCategory(str, enum.Enum):
+    question = "question"
+    collab = "collab"
+    positive = "positive"
+    negative = "negative"
+    other = "other"
+
+class Comment(Base):
+    """
+    Fetched comments analyzed for sentiment and CRM categorization.
+    """
+    __tablename__ = "comments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    post_id = Column(UUID(as_uuid=True), ForeignKey("posts.id", ondelete="CASCADE"), nullable=False, index=True)
+    author_name = Column(String(200), nullable=True)
+    author_profile_url = Column(Text, nullable=True)
+    text = Column(Text, nullable=False)
+    sentiment_score = Column(Float, nullable=True)
+    category = Column(SAEnum(CommentCategory), default=CommentCategory.other, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    post = relationship("Post", backref="comments")
+
