@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.config import get_settings
-from app.services.instagram_service import get_authorization_url, connect_instagram_account
+from app.services.instagram_service import get_authorization_url, connect_instagram_account, sync_instagram_account
+from app.models.models import ConnectedAccount, PlatformEnum
 
 router = APIRouter(prefix="/api/instagram", tags=["instagram"])
 settings = get_settings()
@@ -62,5 +63,18 @@ async def instagram_callback(
         traceback.print_exc()
         error_msg = urllib.parse.quote(str(exc))
         return RedirectResponse(f"{redirect_base}/settings?error={error_msg}")
-
     return RedirectResponse(f"{redirect_base}/settings?connected=instagram")
+
+
+@router.post("/sync/{connected_account_id}")
+async def sync_instagram_endpoint(connected_account_id: str, db: Session = Depends(get_db)):
+    account = db.query(ConnectedAccount).filter_by(id=connected_account_id, platform=PlatformEnum.instagram).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Instagram account not found")
+        
+    try:
+        await sync_instagram_account(db, account)
+        return {"success": True, "message": "Instagram account synced"}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

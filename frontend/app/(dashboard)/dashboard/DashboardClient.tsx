@@ -112,9 +112,10 @@ export default function DashboardClient({
       // We sync all connected platforms
       for (const p of stats.platforms) {
         if (p.connected_account_id !== "mock") {
-           // We might need a generic sync endpoint later, but for now we'll just ignore or call youtube sync
            if (p.platform === "youtube") {
                await fetch(`${API_URL}/api/youtube/sync/${p.connected_account_id}`, { method: "POST" });
+           } else if (p.platform === "instagram") {
+               await fetch(`${API_URL}/api/instagram/sync/${p.connected_account_id}`, { method: "POST" });
            }
         }
       }
