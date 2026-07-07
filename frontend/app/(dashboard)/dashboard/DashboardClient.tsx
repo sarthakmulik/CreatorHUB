@@ -13,7 +13,7 @@ import {
   MOCK_VIDEOS,
   MOCK_SNAPSHOTS,
 } from "@/lib/mock-data";
-import { IS_MOCK } from "@/lib/utils";
+import {  IS_MOCK , API_URL } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -61,8 +61,7 @@ export default function DashboardClient({
     }
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
-      
+
       const statsReq = fetch(`${API_URL}/api/dashboard/stats?user_id=${userId}`);
       const growthReq = fetch(`${API_URL}/api/dashboard/growth?user_id=${userId}`);
       const videosReq = fetch(`${API_URL}/api/dashboard/videos?user_id=${userId}`);
@@ -108,7 +107,7 @@ export default function DashboardClient({
     if (IS_MOCK || !stats?.platforms?.length) return;
     setSyncing(true);
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+
       // We sync all connected platforms
       for (const p of stats.platforms) {
         if (p.connected_account_id !== "mock") {

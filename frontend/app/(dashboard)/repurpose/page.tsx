@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/utils";
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -18,7 +19,7 @@ export default function RepurposeDashboard() {
     if (!session) return;
     setUserId(session.user.id);
     try {
-      const res = await fetch(`http://localhost:8000/api/repurpose/status?user_id=${session.user.id}`);
+      const res = await fetch(`${API_URL}/api/repurpose/status?user_id=${session.user.id}`);
       if (res.ok) setVideos(await res.json());
     } catch (err) {
       console.error(err);
@@ -39,7 +40,7 @@ export default function RepurposeDashboard() {
     setSubmitting(true);
     
     try {
-      await fetch("http://localhost:8000/api/repurpose", {
+      await fetch(`${API_URL}/api/repurpose`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: userId, youtube_url: url })

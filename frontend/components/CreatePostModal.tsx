@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/utils";
 
 import { useState, useEffect } from "react";
 import { X, Tv, Camera, UploadCloud, Clock, Check, Scissors } from "lucide-react";
@@ -248,7 +249,6 @@ export default function CreatePostModal({ initialDate, onClose, onSuccess }: Cre
         console.warn("Could not generate thumbnail:", err);
       }
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
       const res = await fetch(`${API_URL}/api/calendar/posts?user_id=${sessionUser.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

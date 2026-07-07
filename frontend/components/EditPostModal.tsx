@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/utils";
 
 import { useState, useEffect } from "react";
 import { X, Tv, Camera, Trash2, Clock, Check } from "lucide-react";
@@ -174,7 +175,6 @@ export default function EditPostModal({ post, onClose, onSuccess }: EditPostModa
         }
       }
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
       const res = await fetch(`${API_URL}/api/calendar/posts/${post.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -205,7 +205,7 @@ export default function EditPostModal({ post, onClose, onSuccess }: EditPostModa
     setIsDeleting(true);
     setError("");
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+
       const res = await fetch(`${API_URL}/api/calendar/posts/${post.id}`, {
         method: "DELETE"
       });

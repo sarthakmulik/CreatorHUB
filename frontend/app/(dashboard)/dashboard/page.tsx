@@ -1,3 +1,4 @@
+import { API_URL } from "@/lib/utils";
 import type { Metadata } from "next";
 import DashboardClient from "./DashboardClient";
 import { createClient } from "@/lib/supabase/server";
@@ -17,7 +18,7 @@ export default async function DashboardPage() {
   }
 
   // Optimize load times by fetching data server-side
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+
   let stats = null;
   let snapshots = [];
   let videos = [];

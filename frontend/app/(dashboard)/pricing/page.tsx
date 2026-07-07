@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/utils";
 
 import { useState, useEffect } from "react";
 import { Check, Star, Zap, Shield, Crown } from "lucide-react";
@@ -77,7 +78,7 @@ export default function PricingPage() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setSessionUser(user);
       if (user) {
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/payments/me?user_id=${user.id}`)
+        fetch(`${API_URL}/api/payments/me?user_id=${user.id}`)
           .then(res => res.json())
           .then(data => {
              if (data && data.tier) {
@@ -103,7 +104,7 @@ export default function PricingPage() {
       }
 
       // 2. Create Order on Backend
-      const orderResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/payments/create-order?user_id=${sessionUser.id}`, {
+      const orderResponse = await fetch(`${API_URL}/api/payments/create-order?user_id=${sessionUser.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan_id: planId }),
@@ -126,7 +127,7 @@ export default function PricingPage() {
         handler: async function (response: any) {
           try {
             // 4. Verify payment on Backend
-            const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/payments/verify?user_id=${sessionUser.id}`, {
+            const verifyRes = await fetch(`${API_URL}/api/payments/verify?user_id=${sessionUser.id}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({

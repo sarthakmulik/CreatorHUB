@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/utils";
 
 import { useEffect, useState } from "react";
 import CalendarView from "@/components/CalendarView";
@@ -23,7 +24,6 @@ export default function CalendarPage() {
         return;
       }
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
       const res = await fetch(`${API_URL}/api/calendar/posts?user_id=${user.id}`);
       
       if (!res.ok) {

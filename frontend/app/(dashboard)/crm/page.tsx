@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/utils";
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -28,7 +29,7 @@ export default function CRMDashboard() {
   const fetchComments = async (uid: string, cat: string) => {
     setLoading(true);
     try {
-      const url = new URL("http://localhost:8000/api/crm/comments");
+      const url = new URL(`${API_URL}/api/crm/comments`);
       url.searchParams.append("user_id", uid);
       if (cat !== "all") url.searchParams.append("category", cat);
       
@@ -43,7 +44,7 @@ export default function CRMDashboard() {
 
   const fetchSuperfans = async (uid: string) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/crm/superfans?user_id=${uid}`);
+      const res = await fetch(`${API_URL}/api/crm/superfans?user_id=${uid}`);
       if (res.ok) setSuperfans(await res.json());
     } catch (err) {
       console.error(err);

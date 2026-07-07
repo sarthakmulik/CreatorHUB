@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/utils";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -12,7 +13,7 @@ export default function PublicMediaKit() {
   useEffect(() => {
     async function loadData() {
       try {
-        const res = await fetch(`http://localhost:8000/api/media-kit/${id}`);
+        const res = await fetch(`${API_URL}/api/media-kit/${id}`);
         if (res.ok) {
           const json = await res.json();
           setData(json);

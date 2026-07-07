@@ -6,7 +6,7 @@ import {
   CheckCircle, Clock, Trash2, Plus, Shield, Loader2
 } from "lucide-react";
 import Image from "next/image";
-import { IS_MOCK } from "@/lib/utils";
+import {  IS_MOCK , API_URL } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/Toast";
 
@@ -162,7 +162,6 @@ function SettingsContent() {
       setSessionUser(user);
       setDisplayName(user.user_metadata?.display_name || "Creator");
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const res = await fetch(`${API_URL}/api/dashboard/stats?user_id=${user.id}`);
       if (res.ok) {
         const stats = await res.json();
@@ -216,7 +215,7 @@ function SettingsContent() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+
       const frontendUrl = encodeURIComponent(window.location.origin);
       const res = await fetch(`${API_URL}/api/${platformId}/auth-url?user_id=${user.id}&frontend_url=${frontendUrl}`);
       if (res.ok) {
@@ -241,8 +240,7 @@ function SettingsContent() {
         toastError("User not found.");
         return;
       }
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
-      
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
       

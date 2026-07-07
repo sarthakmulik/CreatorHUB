@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/utils";
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -18,7 +19,7 @@ export default function MediaKitDashboard() {
       setUserId(session.user.id);
 
       try {
-        const res = await fetch(`http://localhost:8000/api/media-kit/${session.user.id}`);
+        const res = await fetch(`${API_URL}/api/media-kit/${session.user.id}`);
         if (res.ok) {
           const json = await res.json();
           setData(json);

@@ -8,7 +8,7 @@ celery_app = Celery(
     "creatorhub",
     broker=settings.redis_url,
     backend=settings.redis_url,
-    include=["app.tasks.youtube_tasks"]
+    include=["app.tasks.youtube_tasks", "app.tasks.ai_tasks"]
 )
 
 celery_app.conf.update(

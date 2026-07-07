@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/utils";
 
 import { useState, useEffect } from "react";
 import { Sparkles, RefreshCw, AlertCircle } from "lucide-react";
@@ -18,7 +19,7 @@ export default function InsightsClient({ userId }: { userId: string }) {
     try {
       setLoading(true);
       setError(null);
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+
       const res = await fetch(`${API_URL}/api/insights/generate?user_id=${userId}`);
       
       if (!res.ok) {
