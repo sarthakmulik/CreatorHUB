@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     google_client_id: str = ""
     google_client_secret: str = ""
-    api_url: str = "http://localhost:8001"
+    api_url: str = "http://localhost:8000"
     instagram_client_id: str = ""
     instagram_client_secret: str = ""
     tiktok_client_key: str = ""
