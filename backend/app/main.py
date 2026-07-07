@@ -9,6 +9,7 @@ from app.routers.payments import router as payments_router
 from app.routers.mediakit import router as mediakit_router
 from app.routers.crm import router as crm_router
 from app.routers.repurpose import router as repurpose_router
+from app.routers.editor import router as editor_router
 
 settings = get_settings()
 
