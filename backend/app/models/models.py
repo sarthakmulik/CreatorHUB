@@ -204,5 +204,5 @@ class Comment(Base):
     category = Column(SAEnum(CommentCategory), default=CommentCategory.other, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    post = relationship("Post", backref="comments")
+    post = relationship("Post", backref="comment_items")
 
