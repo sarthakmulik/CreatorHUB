@@ -122,3 +122,58 @@ CREATE INDEX ix_comments_post_id ON comments(post_id);
 
 -- Add niche_cpm to users table
 ALTER TABLE users ADD COLUMN niche_cpm FLOAT NOT NULL DEFAULT 10.0;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- STAGE 1 — Deep Instagram Insights + Audience Demographics
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- 11. Extend daily_snapshots with IG deep metrics (aggregated per day)
+ALTER TABLE daily_snapshots ADD COLUMN reach BIGINT DEFAULT 0;
+ALTER TABLE daily_snapshots ADD COLUMN impressions BIGINT DEFAULT 0;
+ALTER TABLE daily_snapshots ADD COLUMN saves BIGINT DEFAULT 0;
+ALTER TABLE daily_snapshots ADD COLUMN shares BIGINT DEFAULT 0;
+ALTER TABLE daily_snapshots ADD COLUMN replies BIGINT DEFAULT 0;
+
+-- 12. Post Insights Table — deep per-post analytics stored as JSONB
+--     (handles REELS vs FEED vs STORY metric differences gracefully)
+CREATE TABLE post_insights (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    metrics JSONB NOT NULL DEFAULT '{}'::jsonb,
+    media_product_type VARCHAR(50),
+    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() AT TIME ZONE 'utc')
+);
+CREATE UNIQUE INDEX ix_post_insights_post_id ON post_insights(post_id);
+
+-- 13. Audience Snapshot Table — daily IG audience breakdown (gender/age/cities/countries)
+CREATE TABLE audience_snapshots (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    connected_account_id UUID NOT NULL REFERENCES connected_accounts(id) ON DELETE CASCADE,
+    date TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    demographics JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() AT TIME ZONE 'utc')
+);
+CREATE INDEX ix_audience_snapshots_connected_account_id ON audience_snapshots(connected_account_id);
+CREATE INDEX ix_audience_snapshots_date ON audience_snapshots(date);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- STAGE 2 — Best-Time-to-Post Heatmap (IST)
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- 14. Audience Online Table — follower-online distribution by IST hour (0-23)
+CREATE TABLE audience_online (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    connected_account_id UUID NOT NULL REFERENCES connected_accounts(id) ON DELETE CASCADE,
+    date TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    hour_ist INTEGER NOT NULL,  -- 0-23 (Indian Standard Time)
+    weight FLOAT NOT NULL DEFAULT 0.0,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() AT TIME ZONE 'utc')
+);
+CREATE INDEX ix_audience_online_connected_account_id ON audience_online(connected_account_id);
+CREATE INDEX ix_audience_online_date ON audience_online(date);
+CREATE UNIQUE INDEX ix_audience_online_account_date_hour ON audience_online(connected_account_id, date, hour_ist);
+
+
+
+-- Stage 3 Additions
+ALTER TABLE comments ADD COLUMN platform_comment_id VARCHAR(200) UNIQUE;

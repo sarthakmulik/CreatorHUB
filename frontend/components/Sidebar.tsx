@@ -18,8 +18,18 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-const NAV_ITEMS = [
+// Brand SVG for Instagram (lucide-react 1.x dropped brand icons)
+const InstagramBrandIcon = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </svg>
+);
+
+const NAV_ITEMS: { href: string; label: string; icon: any }[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/instagram", label: "Instagram", icon: InstagramBrandIcon },
   { href: "/calendar",  label: "Calendar",  icon: CalendarDays },
   { href: "/insights",  label: "Insights",  icon: Sparkles },
   { href: "/media-kit", label: "Media Kit", icon: Briefcase },

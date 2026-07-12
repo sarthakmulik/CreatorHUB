@@ -12,6 +12,8 @@ export default function CRMDashboard() {
   const [filter, setFilter] = useState("all");
   const [userId, setUserId] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [draftReplies, setDraftReplies] = useState<Record<string, string>>({});
+  const [generatingDraft, setGeneratingDraft] = useState<string | null>(null);
   const supabase = createClient();
 
   const loadData = async () => {
@@ -58,11 +60,40 @@ export default function CRMDashboard() {
 
   const handleSync = async () => {
     setSyncing(true);
-    // Simulate syncing delay
+    // Find the first connected IG account to sync. In a real app we'd let user select.
+    try {
+      const statsRes = await fetch(`${API_URL}/api/dashboard/stats?user_id=${userId}`);
+      if (statsRes.ok) {
+        const stats = await statsRes.json();
+        const ig = (stats.platforms || []).find((p: any) => p.platform === "instagram");
+        if (ig) {
+          await fetch(`${API_URL}/api/crm/comments/sync/${ig.connected_account_id}`, { method: 'POST' });
+        }
+      }
+    } catch(e) {}
+    
     setTimeout(() => {
       loadData();
       setSyncing(false);
-    }, 1500);
+    }, 2500);
+  };
+
+  const handleDraftReply = async (commentId: string, text: string) => {
+    setGeneratingDraft(commentId);
+    try {
+      const res = await fetch(`${API_URL}/api/ai/draft-reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment_text: text })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDraftReplies(prev => ({ ...prev, [commentId]: data.reply }));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setGeneratingDraft(null);
   };
 
   const getCategoryBorder = (category: string) => {
@@ -194,13 +225,36 @@ export default function CRMDashboard() {
                         {comment.text}
                       </p>
                       
-                      <div className="flex items-center gap-4">
-                        <button className="text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2 bg-purple-500/10 px-4 py-2 rounded-lg hover:bg-purple-500/20">
-                          <MessageSquareHeart size={16} /> Auto-Draft Reply
-                        </button>
-                        <button className="text-sm font-medium text-[var(--text-muted)] hover:text-white transition-colors flex items-center gap-1">
-                          View on Platform <ArrowUpRight size={14} />
-                        </button>
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-4">
+                          <button 
+                            onClick={() => handleDraftReply(comment.id, comment.text)}
+                            disabled={generatingDraft === comment.id}
+                            className="text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2 bg-purple-500/10 px-4 py-2 rounded-lg hover:bg-purple-500/20 disabled:opacity-50"
+                          >
+                            {generatingDraft === comment.id ? <RefreshCw size={16} className="animate-spin" /> : <MessageSquareHeart size={16} />} 
+                            {generatingDraft === comment.id ? "Drafting..." : "Auto-Draft Reply"}
+                          </button>
+                          <button className="text-sm font-medium text-[var(--text-muted)] hover:text-white transition-colors flex items-center gap-1">
+                            View on Platform <ArrowUpRight size={14} />
+                          </button>
+                        </div>
+                        {draftReplies[comment.id] && (
+                          <div className="bg-[rgba(168,85,247,0.1)] border border-purple-500/20 p-3 rounded-lg relative animate-fade-in-up">
+                            <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest absolute -top-2 bg-[var(--bg-surface)] px-2">AI Draft</span>
+                            <textarea 
+                              className="w-full bg-transparent border-none text-sm text-[var(--text-primary)] outline-none resize-none mt-1"
+                              value={draftReplies[comment.id]}
+                              onChange={(e) => setDraftReplies(prev => ({...prev, [comment.id]: e.target.value}))}
+                              rows={2}
+                            />
+                            <div className="flex justify-end mt-2">
+                              <button className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-3 py-1.5 rounded-md transition-colors shadow-lg">
+                                Publish Reply
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

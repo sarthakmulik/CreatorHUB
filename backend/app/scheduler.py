@@ -260,6 +260,16 @@ def start_scheduler() -> AsyncIOScheduler:
         max_instances=1,
         coalesce=True,
     )
+    
+    scheduler.add_job(
+        refresh_expiring_tokens,
+        trigger=IntervalTrigger(days=1),
+        id="refresh_expiring_tokens",
+        name="Refresh tokens expiring in < 7 days",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+    )
 
     scheduler.start()
     logger.info("✅ AsyncIOScheduler started — checking for posts every 30 seconds.")
@@ -286,5 +296,26 @@ async def sync_all_accounts():
                 
     except Exception as e:
         logger.error(f"Error in sync_all_accounts: {e}")
+    finally:
+        db.close()
+
+async def refresh_expiring_tokens():
+    from app.services.instagram_service import refresh_long_lived_token
+    from app.models.models import ConnectedAccount, PlatformEnum
+    from datetime import timedelta
+    
+    db: Session = SessionLocal()
+    try:
+        now = datetime.utcnow()
+        threshold = now + timedelta(days=7)
+        accounts = db.query(ConnectedAccount).filter(
+            ConnectedAccount.platform == PlatformEnum.instagram,
+            ConnectedAccount.token_expires_at <= threshold
+        ).all()
+        
+        for acc in accounts:
+            await refresh_long_lived_token(db, acc)
+    except Exception as e:
+        logger.error(f"Error in refresh_expiring_tokens: {e}")
     finally:
         db.close()

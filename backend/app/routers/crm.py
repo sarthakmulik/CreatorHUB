@@ -6,6 +6,8 @@ import uuid
 
 from app.database import get_db
 from app.models.models import Comment, Post, ConnectedAccount, User
+from app.tasks.ai_tasks import sync_and_analyze_comments
+from app.services.instagram_service import sync_instagram_account
 
 router = APIRouter(prefix="/api/crm", tags=["Sentiment CRM"])
 
@@ -62,3 +64,29 @@ async def get_superfans(user_id: uuid.UUID, db: Session = Depends(get_db)):
             "comment_count": s.comment_count
         } for s in superfans
     ]
+
+
+@router.post("/comments/sync/{account_id}")
+async def sync_crm_comments(account_id: str, db: Session = Depends(get_db)):
+    """
+    Manually trigger sync and analysis for a specific account.
+    """
+    account = db.query(ConnectedAccount).filter_by(id=account_id).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+        
+    try:
+        await sync_instagram_account(db, account)
+        sync_and_analyze_comments.delay()
+        return {"status": "Sync and analysis queued"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/ai-analyze")
+async def trigger_ai_analyze():
+    """
+    Manually trigger the celery task to analyze any pending comments.
+    """
+    sync_and_analyze_comments.delay()
+    return {"status": "Analysis queued"}
+

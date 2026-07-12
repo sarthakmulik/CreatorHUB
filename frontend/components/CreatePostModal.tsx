@@ -2,7 +2,7 @@
 import { API_URL } from "@/lib/utils";
 
 import { useState, useEffect } from "react";
-import { X, Tv, Camera, UploadCloud, Clock, Check, Scissors } from "lucide-react";
+import { X, Tv, Camera, UploadCloud, Clock, Check, Scissors, Sparkles, RefreshCw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import ImageCropperModal from "./ImageCropperModal";
 import StoryEditorModal from "./StoryEditorModal";
@@ -42,12 +42,28 @@ export default function CreatePostModal({ initialDate, onClose, onSuccess }: Cre
   const [error, setError] = useState("");
   const [croppingFileIndex, setCroppingFileIndex] = useState<number | null>(null);
   const [editingStoryFileIndex, setEditingStoryFileIndex] = useState<number | null>(null);
+  const [bestTimeSlots, setBestTimeSlots] = useState<any[]>([]);
+
+  const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
+  const [captionLanguage, setCaptionLanguage] = useState("english");
+  const [captionTopic, setCaptionTopic] = useState("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setSessionUser(user);
     });
   }, []);
+
+  useEffect(() => {
+    if (sessionUser?.id) {
+      fetch(`${API_URL}/api/instagram/best-time-by-user/${sessionUser.id}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.top_slots) setBestTimeSlots(d.top_slots);
+        })
+        .catch(console.error);
+    }
+  }, [sessionUser?.id]);
 
   const togglePlatform = (p: string) => {
     setPlatforms(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]);
@@ -374,6 +390,36 @@ export default function CreatePostModal({ initialDate, onClose, onSuccess }: Cre
                 style={{ paddingLeft: 38, width: "100%" }}
               />
             </div>
+            {bestTimeSlots.length > 0 && platforms.includes("instagram") && (
+              <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 11, color: "var(--text-muted)", alignSelf: "center", display: "flex", alignItems: "center", gap: 4 }}><Sparkles size={10} className="text-yellow-400"/> Best Times (IST):</span>
+                {bestTimeSlots.map(slot => {
+                  const hr = slot.hour_ist.toString().padStart(2, '0');
+                  const t = `${hr}:00`;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setTime(t)}
+                      style={{
+                        background: "rgba(168, 85, 247, 0.1)",
+                        border: "1px solid rgba(168, 85, 247, 0.3)",
+                        color: "#a855f7",
+                        fontSize: 11,
+                        padding: "2px 8px",
+                        borderRadius: 12,
+                        cursor: "pointer",
+                        transition: "all 0.2s ease"
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(168, 85, 247, 0.2)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "rgba(168, 85, 247, 0.1)"}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -587,9 +633,59 @@ export default function CreatePostModal({ initialDate, onClose, onSuccess }: Cre
         )}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase" }}>
-            Caption
-          </label>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase" }}>
+              Caption
+            </label>
+          </div>
+          
+          <div style={{ background: "rgba(168, 85, 247, 0.05)", border: "1px solid rgba(168, 85, 247, 0.2)", borderRadius: 8, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input 
+                type="text" 
+                placeholder="What is this post about? (e.g., new vlog)" 
+                className="input-field" 
+                style={{ flex: 1, padding: "6px 10px", fontSize: 12, minHeight: 32 }}
+                value={captionTopic}
+                onChange={e => setCaptionTopic(e.target.value)}
+              />
+              <select 
+                className="input-field" 
+                style={{ padding: "6px 10px", fontSize: 12, width: 100, minHeight: 32 }}
+                value={captionLanguage}
+                onChange={e => setCaptionLanguage(e.target.value)}
+              >
+                <option value="english">English</option>
+                <option value="hindi">Hindi</option>
+                <option value="hinglish">Hinglish</option>
+              </select>
+              <button 
+                type="button"
+                onClick={async () => {
+                  if (!captionTopic) return setError("Please enter a topic to generate a caption.");
+                  setIsGeneratingCaption(true);
+                  try {
+                    const res = await fetch(`${API_URL}/api/ai/caption`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ topic: captionTopic, language: captionLanguage })
+                    });
+                    if (res.ok) {
+                      const data = await res.json();
+                      setCaption(data.caption);
+                    }
+                  } catch (err) {}
+                  setIsGeneratingCaption(false);
+                }}
+                disabled={isGeneratingCaption}
+                className="bg-purple-600 hover:bg-purple-500 text-white rounded flex items-center justify-center gap-1 transition-colors disabled:opacity-50"
+                style={{ height: 32, padding: "0 12px", fontSize: 12, fontWeight: 700 }}
+              >
+                {isGeneratingCaption ? <RefreshCw size={12} className="animate-spin" /> : <Sparkles size={12} />} Generate
+              </button>
+            </div>
+          </div>
+
           <textarea 
             className="input-field" 
             placeholder="Write your engaging caption here..."

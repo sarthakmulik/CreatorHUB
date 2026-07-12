@@ -81,11 +81,14 @@ class ConnectedAccount(Base):
     user = relationship("User", back_populates="connected_accounts")
     daily_snapshots = relationship("DailySnapshot", back_populates="connected_account", cascade="all, delete-orphan")
     posts = relationship("Post", back_populates="connected_account", cascade="all, delete-orphan")
+    audience_snapshots = relationship("AudienceSnapshot", back_populates="connected_account", cascade="all, delete-orphan")
+    audience_online = relationship("AudienceOnline", back_populates="connected_account", cascade="all, delete-orphan")
 
 
 class DailySnapshot(Base):
     """
     One row per connected account per day — enables growth-over-time charts.
+    Extended with Instagram deep metrics (reach, impressions, saves, shares, replies).
     """
     __tablename__ = "daily_snapshots"
 
@@ -96,6 +99,12 @@ class DailySnapshot(Base):
     views = Column(BigInteger, default=0)
     likes = Column(BigInteger, default=0)
     comments = Column(BigInteger, default=0)
+    # Instagram deep metrics (aggregated across recent media for this day)
+    reach = Column(BigInteger, default=0)
+    impressions = Column(BigInteger, default=0)
+    saves = Column(BigInteger, default=0)
+    shares = Column(BigInteger, default=0)
+    replies = Column(BigInteger, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     connected_account = relationship("ConnectedAccount", back_populates="daily_snapshots")
@@ -123,6 +132,7 @@ class Post(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     connected_account = relationship("ConnectedAccount", back_populates="posts")
+    insight = relationship("PostInsight", back_populates="post", uselist=False, cascade="all, delete-orphan")
 
 
 class ScheduledPost(Base):
@@ -197,6 +207,7 @@ class Comment(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     post_id = Column(UUID(as_uuid=True), ForeignKey("posts.id", ondelete="CASCADE"), nullable=False, index=True)
+    platform_comment_id = Column(String(200), nullable=True, unique=True, index=True)
     author_name = Column(String(200), nullable=True)
     author_profile_url = Column(Text, nullable=True)
     text = Column(Text, nullable=False)
@@ -205,4 +216,61 @@ class Comment(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     post = relationship("Post", backref="comment_items")
+
+
+class PostInsight(Base):
+    """
+    Deep analytics for a single post. Stored as JSONB so we don't fight the
+    REELS-vs-FEED-vs-STORY metric differences across the Graph API.
+
+    Typical keys (varies by media type):
+      reach, impressions, saves, shares, replies, profile_visits,
+      exits, taps_forward, taps_back, video_views, likes, comments
+    """
+    __tablename__ = "post_insights"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    post_id = Column(UUID(as_uuid=True), ForeignKey("posts.id", ondelete="CASCADE"), nullable=False, index=True, unique=True)
+    metrics = Column(postgresql.JSONB, nullable=False, default={})
+    media_product_type = Column(String(50), nullable=True)  # REELS | FEED | STORY | AD
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    post = relationship("Post", back_populates="insight")
+
+
+class AudienceSnapshot(Base):
+    """
+    One row per connected account per day capturing the IG audience breakdown.
+    `demographics` JSONB holds the raw Graph API distribution, e.g.:
+      {"gender_age": [{"id":"F.18-24","value":12.3}, ...],
+       "cities":     [{"id":"Mumbai, Maharashtra, IN","value":5.1}, ...],
+       "countries":  [{"id":"IN","value":82.4}, ...]}
+    """
+    __tablename__ = "audience_snapshots"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    connected_account_id = Column(UUID(as_uuid=True), ForeignKey("connected_accounts.id", ondelete="CASCADE"), nullable=False, index=True)
+    date = Column(DateTime, nullable=False, index=True)
+    demographics = Column(postgresql.JSONB, nullable=False, default={})
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    connected_account = relationship("ConnectedAccount", back_populates="audience_snapshots")
+
+
+class AudienceOnline(Base):
+    """
+    Follower-online distribution by hour (Indian Standard Time, 0-23).
+    `weight` is the relative share of audience active during that IST hour.
+    Powers the Best-Time-to-Post heatmap. Refreshed daily.
+    """
+    __tablename__ = "audience_online"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    connected_account_id = Column(UUID(as_uuid=True), ForeignKey("connected_accounts.id", ondelete="CASCADE"), nullable=False, index=True)
+    date = Column(DateTime, nullable=False, index=True)
+    hour_ist = Column(Integer, nullable=False)  # 0-23
+    weight = Column(Float, default=0.0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    connected_account = relationship("ConnectedAccount", back_populates="audience_online")
 

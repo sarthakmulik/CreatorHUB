@@ -10,25 +10,25 @@ from datetime import datetime
 analyzer = SentimentIntensityAnalyzer()
 
 @celery_app.task
-def sync_and_analyze_comments(post_id_str: str):
+def sync_and_analyze_comments(post_id_str: str = None):
     """
-    Mock task to simulate fetching comments from a social platform,
-    running VADER sentiment analysis, and categorizing them.
+    Fetch unanalyzed comments from DB, run VADER sentiment analysis, and categorize them.
+    Supports Hinglish Regex.
     """
     db = SessionLocal()
     try:
-        # In a real scenario, we'd fetch from YouTube/Instagram API using the post ID.
-        # Here we just generate some mock comments for demonstration.
-        mock_comments = [
-            {"author": "Brand Deals Co", "text": "Love your content! Are you open for a sponsor or collab?", "url": ""},
-            {"author": "Curious Viewer", "text": "How did you edit the second part? What software do you use?", "url": ""},
-            {"author": "Troll123", "text": "This is the worst video ever. Unsubscribed.", "url": ""},
-            {"author": "Superfan 99", "text": "You are literally the best creator on this app!!!", "url": ""},
-        ]
-        
-        for mc in mock_comments:
-            text = mc["text"]
+        # Fetch comments that lack sentiment_score
+        query = db.query(Comment).filter(Comment.sentiment_score == None)
+        if post_id_str:
+            query = query.filter(Comment.post_id == post_id_str)
             
+        unanalyzed = query.all()
+        
+        for c in unanalyzed:
+            text = c.text
+            if not text:
+                continue
+                
             # Sentiment Analysis
             scores = analyzer.polarity_scores(text)
             sentiment_score = scores['compound']
@@ -36,25 +36,20 @@ def sync_and_analyze_comments(post_id_str: str):
             # Categorization
             category = 'other'
             text_lower = text.lower()
-            if re.search(r'\b(sponsor|collab|business|email|brand)\b', text_lower):
+            
+            # Hinglish & English regex for collabs/sponsors
+            if re.search(r'\b(sponsor|collab|business|email|brand|promotion|pr|paid|paisa|paise)\b', text_lower):
                 category = 'collab'
-            elif '?' in text:
+            elif '?' in text or re.search(r'\b(kaise|kya|kyun|how|what|why|where|kab)\b', text_lower):
                 category = 'question'
-            elif sentiment_score > 0.5:
+            elif sentiment_score > 0.5 or re.search(r'\b(mast|badhiya|kadak|osm|awesome|nice|love|op|bhai)\b', text_lower):
                 category = 'positive'
-            elif sentiment_score < -0.5:
+            elif sentiment_score < -0.5 or re.search(r'\b(bakwas|ghatiya|hate|worst|chutiya|pagal)\b', text_lower):
                 category = 'negative'
                 
-            new_comment = Comment(
-                post_id=post_id_str,
-                author_name=mc["author"],
-                author_profile_url=mc["url"],
-                text=text,
-                sentiment_score=sentiment_score,
-                category=category
-            )
-            db.add(new_comment)
-        
+            c.sentiment_score = sentiment_score
+            c.category = category
+            
         db.commit()
     except Exception as e:
         db.rollback()

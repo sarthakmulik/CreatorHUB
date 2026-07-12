@@ -10,6 +10,7 @@ from app.routers.mediakit import router as mediakit_router
 from app.routers.crm import router as crm_router
 from app.routers.repurpose import router as repurpose_router
 from app.routers.editor import router as editor_router
+from app.routers.ai import router as ai_router
 
 settings = get_settings()
 
@@ -58,6 +59,7 @@ app.include_router(payments_router)
 app.include_router(mediakit_router)
 app.include_router(crm_router)
 app.include_router(repurpose_router)
+app.include_router(ai_router)
 
 
 @app.get("/health")
